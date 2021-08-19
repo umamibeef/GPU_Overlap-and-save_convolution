@@ -160,6 +160,19 @@ int Write_output(float2 *h_output, int signal_length, int nFilters, char *output
 	return(error);
 }
 
+// Given an input file stream, return the number of complex64 (2 x float32) that exist in the file
+long int File_size_complex64(ifstream &FILEIN)
+{
+	std::size_t count=0;
+	// Seek to the end of the file
+	FILEIN.seekg(0,ios::end);
+	// Get the position of the file (which will give us the file size)
+	count = FILEIN.tellg();
+	// Seek back to beginning to emulate the state we leave the file stream in File_size_row_signal
+	FILEIN.seekg(0,ios::beg);
+	// Return the number in terms of complex64
+	return (count / (sizeof(float)*2));
+}
 
 long int File_size_row_signal(ifstream &FILEIN){
 	std::size_t count=0;
@@ -170,15 +183,15 @@ long int File_size_row_signal(ifstream &FILEIN){
 
 
 int Load_signal(char *filename, int *nSamples, float2 **data){
-	float real, imaginary;
+	// float real, imaginary;
 	int file_size, cislo, error;
 	error=0;
 
 	ifstream FILEIN;
-	FILEIN.open(filename,ios::in);
+	FILEIN.open(filename,ios::in | ios::binary);
 	if (!FILEIN.fail()){
 		error=0;
-		file_size=File_size_row_signal(FILEIN);
+		file_size=File_size_complex64(FILEIN);
 		(*nSamples) = file_size;
 		printf("nSamples:%d;\n", (*nSamples) );
 
@@ -194,9 +207,11 @@ int Load_signal(char *filename, int *nSamples, float2 **data){
 			FILEIN.seekg(0,ios::beg);
 			
 			for (cislo = 0; cislo < file_size; cislo++) {
-				FILEIN >> real >> imaginary;
-				(*data)[cislo].x = real;
-				(*data)[cislo].y = imaginary;
+				// FILEIN >> real >> imaginary;
+				// (*data)[cislo].x = real;
+				// (*data)[cislo].y = imaginary;
+				FILEIN.read(reinterpret_cast<char*>(&((*data)[cislo].x)), sizeof(float)); // Real component
+				FILEIN.read(reinterpret_cast<char*>(&((*data)[cislo].y)), sizeof(float)); // Imaginary component
 			}
 		}
 		else {
@@ -214,15 +229,15 @@ int Load_signal(char *filename, int *nSamples, float2 **data){
 
 
 int Load_filters(char *filename, int *nFilters, int *filter_length, float2 **data){
-	float real, imaginary;
+	// float real, imaginary;
 	int file_size, cislo, error, filter_size;
 	error=0;
 
 	ifstream FILEIN;
-	FILEIN.open(filename,ios::in);
+	FILEIN.open(filename,ios::in | ios::binary);
 	if (!FILEIN.fail()){
 		error=0;
-		file_size = File_size_row_signal(FILEIN);
+		file_size = File_size_complex64(FILEIN);
 		(*filter_length) = file_size/(*nFilters);
 		filter_size = (*nFilters)*(*filter_length);
 		printf("filter_length:%d; file_size:%d; filter_size:%d;\n", (*filter_length), file_size, filter_size);
@@ -240,9 +255,11 @@ int Load_filters(char *filename, int *nFilters, int *filter_length, float2 **dat
 			FILEIN.seekg(0,ios::beg);
 
 			for (cislo=0; cislo < filter_size; cislo++) {
-				FILEIN >> real >> imaginary;
-				(*data)[cislo].x = real;
-				(*data)[cislo].y = imaginary;
+				// FILEIN >> real >> imaginary;
+				// (*data)[cislo].x = real;
+				// (*data)[cislo].y = imaginary;
+				FILEIN.read(reinterpret_cast<char*>(&((*data)[cislo].x)), sizeof(float)); // Real component
+				FILEIN.read(reinterpret_cast<char*>(&((*data)[cislo].y)), sizeof(float)); // Imaginary component
 			}
 		}
 		else {
@@ -417,10 +434,27 @@ int main(int argc, char* argv[]) {
 		Full_CONV_check(h_output, h_input, h_filters, signal_length, filter_length, past_filter_samples, useful_part_size, convolution_length, nConvolutions, nFilters, &total_error, &mean_error);
 		//printf("Total error: %e; Mean error: %e\n", total_error, mean_error);
 	}
-	
-	if (input_type == 'f') {
-		Write_output(h_output, useful_part_size*nConvolutions, nFilters, output_signal_file);
+
+	float max_mag = 0;
+	float new_max_mag = 0;
+	int max_mag_index = 0;
+
+	// Check for max value and index
+	for (int sample = 0; sample < (int)output_size; sample++)
+	{
+		new_max_mag = (h_output[sample].x * h_output[sample].y);
+		if (new_max_mag > max_mag)
+		{
+			max_mag = new_max_mag;
+			max_mag_index = sample;
+		}
 	}
+
+	printf("Found maximum magnitude of %f at index=%i\n", max_mag, max_mag_index);
+	
+	// if (input_type == 'f') {
+		// Write_output(h_output, useful_part_size*nConvolutions, nFilters, output_signal_file);
+	// }
 	
 	free(h_input);
 	free(h_output);

@@ -1,5 +1,5 @@
 #define VERBOSE true
-#define DEBUG false
+#define DEBUG true
 #define WRITE true
 #define CHECK false
 
