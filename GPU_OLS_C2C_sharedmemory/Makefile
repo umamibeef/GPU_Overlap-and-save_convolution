@@ -8,6 +8,11 @@ LIB := -L${CUDA_HOME}/lib64 -lcudart -lcufft -lcuda
 GCC = g++
 NVCC = ${CUDA_HOME}/bin/nvcc
 
+# sm_62 is for Jetson TX2 (Pascal)
+# Fermi Kepler	Maxwell	Pascal	Volta	Turing	Ampere	Lovelace	Hopper
+# sm_20	sm_30	sm_50	sm_60	sm_70	sm_75	sm_80	sm_90?	sm_100c?
+#	sm_35	sm_52	sm_61	sm_72		sm_86
+#	sm_37	sm_53	sm_62
 NVCCFLAGS = -O3 -arch=sm_62 --ptxas-options=-v --use_fast_math -Xcompiler -Wextra -lineinfo
 
 GCC_OPTS =-O3 -Wall -Wextra $(INC)
