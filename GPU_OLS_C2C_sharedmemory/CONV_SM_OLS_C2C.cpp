@@ -146,9 +146,11 @@ int Write_output(float2 *h_output, int signal_length, int nFilters, char *output
 						fflush(stdout);
 					}
 				}
-				FILEOUT << f << " " << Ts << " " << h_output[f*signal_length+Ts].x << " " << h_output[f*signal_length+Ts].y << endl;
+				// FILEOUT << f << " " << Ts << " " << h_output[f*signal_length+Ts].x << " " << h_output[f*signal_length+Ts].y << endl;
+				FILEOUT.write(reinterpret_cast<char*>(&(h_output[f*signal_length+Ts].x)), sizeof(float)); // Real component
+				FILEOUT.write(reinterpret_cast<char*>(&(h_output[f*signal_length+Ts].y)), sizeof(float)); // Imaginary component
 			}
-			FILEOUT << endl;
+			// FILEOUT << endl;
 			if (VERBOSE) printf("] filter=%d\n",f);
 		}
 	}
@@ -395,6 +397,7 @@ int main(int argc, char* argv[]) {
 	int corrected_filter_length;
 	if( filter_length%2==0 ) corrected_filter_length = filter_length + 1;
 	else corrected_filter_length = filter_length;
+	
 	int useful_part_size = convolution_length - corrected_filter_length + 1;
 	int nConvolutions    = signal_length/useful_part_size;
 	if( (signal_length%useful_part_size)>0 ) nConvolutions++;
@@ -440,8 +443,11 @@ int main(int argc, char* argv[]) {
 	int max_mag_index = 0;
 
 	// Check for max value and index
+	printf("output size = %lu\n", output_size);
 	for (int sample = 0; sample < (int)output_size; sample++)
 	{
+		// if (h_output[sample].x > 0.0) printf("output @ sample %i.x = %f", sample, h_output[sample].x);
+		// if (h_output[sample].y > 0.0) printf("output @ sample %i.y = %f", sample, h_output[sample].y);
 		new_max_mag = (h_output[sample].x * h_output[sample].y);
 		if (new_max_mag > max_mag)
 		{
@@ -452,9 +458,9 @@ int main(int argc, char* argv[]) {
 
 	printf("Found maximum magnitude of %f at index=%i\n", max_mag, max_mag_index);
 	
-	// if (input_type == 'f') {
-		// Write_output(h_output, useful_part_size*nConvolutions, nFilters, output_signal_file);
-	// }
+	if (input_type == 'f') {
+		Write_output(h_output, useful_part_size*nConvolutions, nFilters, output_signal_file);
+	}
 	
 	free(h_input);
 	free(h_output);
