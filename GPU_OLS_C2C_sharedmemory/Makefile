@@ -9,6 +9,8 @@ GCC = g++
 NVCC = ${CUDA_HOME}/bin/nvcc
 
 # sm_62 is for Jetson TX2 (Pascal)
+# Fermi and Kepler are deprecated from CUDA 9 and 11 onwards
+# Maxwell is deprecated from CUDA 12 onwards
 # Fermi Kepler	Maxwell	Pascal	Volta	Turing	Ampere	Lovelace	Hopper
 # sm_20	sm_30	sm_50	sm_60	sm_70	sm_75	sm_80	sm_90?	sm_100c?
 #	sm_35	sm_52	sm_61	sm_72		sm_86
